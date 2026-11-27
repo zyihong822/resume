@@ -50,7 +50,7 @@ const timingHints: Record<string, string> = {
 export default function MessageChannelSettings({ notices, todos }: { notices: Section[]; todos: Section[] }) {
   const groups = [...notices, ...todos];
   const rows = groups.flatMap(group => group.items.map(item => ({ id: `${group.key}:${item}`, item })));
-  const defaults = (): Record<string, Choice> => Object.fromEntries(rows.map(({ id, item }) => [id, { site: true, wechat: !!popupRules[item], popup: !!popupRules[item], sms: false }]));
+  const defaults = (): Record<string, Choice> => Object.fromEntries(rows.map(({ id, item }) => [id, { site: true, wechat: false, popup: !!popupRules[item], sms: false }]));
   const [config, setConfig] = useState<Config>({ items: defaults(), recipients: [], scheme: 'recommended' });
   const [ready, setReady] = useState(false);
   const [feedback, setFeedback] = useState('');
@@ -99,7 +99,7 @@ export default function MessageChannelSettings({ notices, todos }: { notices: Se
         });
         const recipients = Array.isArray(saved.recipients) ? saved.recipients.filter((r: Recipient) => typeof r.id === 'string' && typeof r.nickname === 'string') : saved.binding?.nickname ? [{ id: 'legacy', nickname: saved.binding.nickname }] : [];
         const changedElsewhere = rows.some(({ id, item }) => popupRules[item] && typeof saved.items?.[id]?.popup === 'boolean' && typeof popupSaved[popupRules[item].id] === 'boolean' && saved.items[id].popup !== popupSaved[popupRules[item].id]);
-        setConfig({ recipients, scheme: changedElsewhere ? 'custom' : saved.scheme || 'custom', items: Object.fromEntries(rows.map(({ id, item }) => [id, { site: typeof saved.items?.[id]?.site === 'boolean' ? saved.items[id].site : true, wechat: id.startsWith('orderProcess:') && item !== '用户发票待上传' && saved.items?.[id]?.wechat === true, popup: popupRules[item] ? (typeof popupSaved[popupRules[item].id] === 'boolean' ? popupSaved[popupRules[item].id] : saved.items?.[id]?.popup !== false) : false, sms: saved.items?.[id]?.sms === true }])) });
+        setConfig({ recipients, scheme: changedElsewhere ? 'custom' : saved.scheme || 'custom', items: Object.fromEntries(rows.map(({ id, item }) => [id, { site: typeof saved.items?.[id]?.site === 'boolean' ? saved.items[id].site : true, wechat: recipients.length > 0 && id.startsWith('orderProcess:') && item !== '用户发票待上传' && saved.items?.[id]?.wechat === true, popup: popupRules[item] ? (typeof popupSaved[popupRules[item].id] === 'boolean' ? popupSaved[popupRules[item].id] : saved.items?.[id]?.popup !== false) : false, sms: saved.items?.[id]?.sms === true }])) });
       } else {
         setConfig(current => ({ ...current, items: Object.fromEntries(rows.map(({ id, item }) => [id, { ...current.items[id], popup: popupRules[item] ? popupSaved[popupRules[item].id] !== false : false, sms: false }])) }));
       }
@@ -117,7 +117,7 @@ export default function MessageChannelSettings({ notices, todos }: { notices: Se
     } catch { setFeedback('保存失败，请检查浏览器存储设置后重试。'); return false; }
   }
   function toggle(id: string, channel: keyof Choice) {
-    if (channel === 'wechat' && !config.items[id]?.wechat && !config.recipients.length) { setPendingChoice({ kind: 'item', id }); setStep(1); setModal('bind'); return; }
+    if (channel === 'wechat' && !config.recipients.length) { setPendingChoice({ kind: 'item', id }); setStep(1); setModal('bind'); return; }
     save({ ...config, scheme: 'custom', items: { ...config.items, [id]: { ...config.items[id], [channel]: !config.items[id][channel] } } });
   }
   function close() { dialog.current?.close(); setModal(null); setPendingChoice(null); }
@@ -150,7 +150,7 @@ export default function MessageChannelSettings({ notices, todos }: { notices: Se
   }
   return <div className="channel-config scheme-page">
     <div className="subscription-header"><h1>系统订阅配置</h1><button className="primary-button wechat-entry" onClick={() => setModal('channels')}>通知渠道设置</button></div>
-    {ready && !config.recipients.length && <div className="subscription-binding-warning"><span>微信公众号尚未绑定，选择的微信提醒暂不会发出。</span><button onClick={() => setModal('recipients')}>去绑定</button></div>}
+    {ready && !config.recipients.length && <div className="subscription-binding-warning"><span>请先绑定微信接收人，绑定后可选择微信公众号通知渠道。</span><button onClick={() => setModal('recipients')}>去绑定</button></div>}
     {feedback && (feedback.includes('失败') || feedback.includes('无法读取')) && <p className="scheme-feedback" role="alert">{feedback}</p>}
     <div className="settings-columns channel-columns">{block(notices, 'message', '消息通知')}{block(todos, 'todo', '待办中心')}</div>
     <dialog className="wechat-dialog" ref={dialog} aria-labelledby="wechat-dialog-title" onCancel={close} onClick={event => { if (event.target === event.currentTarget) close(); }}>
