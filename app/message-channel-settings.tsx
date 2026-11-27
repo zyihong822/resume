@@ -125,12 +125,7 @@ export default function MessageChannelSettings({ notices, todos }: { notices: Se
   function bind() {
     const recipient = { id: `${Date.now()}`, nickname: `微信接收人 ${config.recipients.length + 1}`, account: '待获取' };
     const recipients = [...config.recipients, recipient];
-    let next = { ...config, recipients };
-    if (pendingChoice?.kind === 'item') next = { ...next, scheme: 'custom', items: { ...next.items, [pendingChoice.id]: { ...next.items[pendingChoice.id], wechat: true } } };
-    if (pendingChoice?.kind === 'scheme') {
-      const scheme = pendingChoice.scheme;
-      next = { ...next, scheme, items: Object.fromEntries(rows.map(({ id, item }) => [id, { site: true, wechat: id.startsWith('orderProcess:') && item !== '用户发票待上传' && (scheme === 'all' || (scheme === 'recommended' && !!popupRules[item])), popup: scheme !== 'box' && !!popupRules[item], sms: false }])) };
-    }
+    const next = { ...config, recipients, scheme: 'custom', items: Object.fromEntries(rows.map(({ id, item }) => [id, { ...config.items[id], wechat: id.startsWith('orderProcess:') && item !== '用户发票待上传' }])) };
     if (save(next)) { setFeedback('微信接收人已关联'); setPendingChoice(null); setModal('recipients'); }
   }
   function block(sections: Section[], kind: string, title: string) {
