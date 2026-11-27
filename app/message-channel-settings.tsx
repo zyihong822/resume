@@ -150,7 +150,7 @@ export default function MessageChannelSettings({ notices, todos }: { notices: Se
   }
   return <div className="channel-config scheme-page">
     <div className="subscription-header"><h1>系统订阅配置</h1><button className="primary-button wechat-entry" onClick={() => setModal('channels')}>通知渠道设置</button></div>
-    {ready && !config.recipients.length && <div className="subscription-binding-warning"><span>请先绑定微信接收人，绑定后可选择微信公众号通知渠道。</span><button onClick={() => setModal('recipients')}>去绑定</button></div>}
+    {ready && !config.recipients.length && <div className="subscription-binding-warning"><span>请先在通知渠道设置微信接收人，绑定后才可选择微信公众号渠道接收通知。</span><button onClick={() => setModal('recipients')}>去绑定</button></div>}
     {feedback && (feedback.includes('失败') || feedback.includes('无法读取')) && <p className="scheme-feedback" role="alert">{feedback}</p>}
     <div className="settings-columns channel-columns">{block(notices, 'message', '消息通知')}{block(todos, 'todo', '待办中心')}</div>
     <dialog className="wechat-dialog" ref={dialog} aria-labelledby="wechat-dialog-title" onCancel={close} onClick={event => { if (event.target === event.currentTarget) close(); }}>
